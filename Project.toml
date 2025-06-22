@@ -3,7 +3,15 @@ uuid = "f625fbab-81b6-4192-8ebc-5847096ba5ac"
 authors = ["WDWidanage <w.d.widanage@outlook.com> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+
 [compat]
+DataFrames = "1.7.0"
+JSON = "0.21.4"
+ModelingToolkit = "10.4.0"
 julia = "1.11"
 
 [extras]
