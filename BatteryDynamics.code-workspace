@@ -4,8 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../../../../Library/CloudStorage/OneDrive-Personal/Data/Battery_Data/OCV_Database"
+			"path": "../../Test_of_Ideas/BatteryDynamics_Pkg"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"julia.environmentPath": "/Users/wdwidanage/Dev/Julia/User_defined_Pkgs/BatteryDynamics"
+	}
 }

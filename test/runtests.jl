@@ -1,5 +1,9 @@
+using Revise
 using BatteryDynamics
 using Test
+
+include("test_pybamm_interface.jl")
+
 
 @testset "BatteryDynamics.jl" begin # test the BatteryDynamics.jl package
 
@@ -12,6 +16,7 @@ using Test
         @warn "Test file $filename not found; skipping related tests."
     end
 
-
+    @test test_pybamm_interface()
+     
 
 end
