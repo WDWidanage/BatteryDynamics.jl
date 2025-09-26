@@ -1,8 +1,24 @@
 module BatteryDynamics
+__precompile__(true)
 
-# Write your package code here.
-function multiply(a=3, b=4)
-    return a * b
-end
+using ModelingToolkit
+using DataFrames
+using CondaPkg
+using PythonCall
+
+# Include OCV-related functionality
+include("ocv_dataframes.jl")
+
+# Include PyBaMM interface
+ include("pybamm_interface.jl")
+    
+export read_ocv_data
+export dataframe_to_dict
+
+# Export PyBaMM interface functions
+ export get_available_parameter_sets
+ export get_pybamm_parameter_set
+ export get_scalar_parameters
+ export get_function_parameters
 
 end

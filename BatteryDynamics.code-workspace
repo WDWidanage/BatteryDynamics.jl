@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Test_of_Ideas/BatteryDynamics_Pkg"
+		}
+	],
+	"settings": {
+		"julia.environmentPath": "/Users/wdwidanage/Dev/Julia/User_defined_Pkgs/BatteryDynamics"
+	}
+}
