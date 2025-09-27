@@ -18,6 +18,7 @@ export dataframe_to_dict
 # Export PyBaMM interface functions
  export get_available_parameter_sets
  export get_pybamm_parameter_set
+ export convert_pybamm_parameter_set_to_julia
  export get_scalar_parameters
  export get_function_parameters
 
