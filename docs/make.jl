@@ -7,7 +7,7 @@ makedocs(
     authors = "W. Dhammika Widanage and contributors",
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", "false") == "true",
-        canonical = "https://WDWidanage.github.io/BatteryDynamics.jl",
+        canonical = "https://wdwidanage.github.io/BatteryDynamics.jl",
         assets = String[],
     ),
     source = "src",
