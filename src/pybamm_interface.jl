@@ -7,7 +7,12 @@ Provides Julia functions to work with PyBaMM parameter sets via PythonCall
 const pb = Ref{Py}()
 
 function __init__()
-  pb[] = pyimport("pybamm")
+  try
+    pb[] = pyimport("pybamm")
+  catch e
+    @warn "Failed to import PyBaMM: $e. Some functionality may not be available."
+    pb[] = nothing
+  end
 end
 
 """
@@ -19,6 +24,10 @@ Get list of available parameter sets in PyBaMM.
 - `Vector{String}`: List of available parameter set names
 """
 function get_available_parameter_sets()
+    if pb[] === nothing
+        @warn "PyBaMM is not available. Returning empty list."
+        return String[]
+    end
     # Get the parameter sets list directly from PyBaMM
     param_set_names = pyconvert(Vector{String}, pb[].parameter_sets)
     return param_set_names
@@ -36,6 +45,10 @@ Load a specific parameter set by name.
 - `NamedTuple`: The requested parameter set, or `nothing` if not found
 """
 function get_pybamm_parameter_set(parameter_set_name::String="Chen2020")
+    if pb[] === nothing
+        @warn "PyBaMM is not available. Cannot load parameter set '$parameter_set_name'."
+        return nothing
+    end
     try
         params = pb[].ParameterValues(parameter_set_name)
         return convert_pybamm_parameter_set_to_julia(params)

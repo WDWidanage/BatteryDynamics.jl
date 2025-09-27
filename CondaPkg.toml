@@ -1,2 +1,2 @@
 [deps]
-pybamm = ""
+pybamm = ">=0.7.0"
