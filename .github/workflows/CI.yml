@@ -33,7 +33,7 @@ jobs:
       - name: Clean Julia cache
         run: rm -rf ~/.julia/compiled
 
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1.11'
       - uses: julia-actions/cache@v2
