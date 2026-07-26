@@ -1,0 +1,12 @@
+[deps]
+BatteryDynamics = "f625fbab-81b6-4192-8ebc-5847096ba5ac"
+FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+
+[sources]
+BatteryDynamics = {path = ".."}
+
+[compat]
+FiniteDifferences = "0.12.33"
+Plots = "1.41.1"
+julia = "1.11"

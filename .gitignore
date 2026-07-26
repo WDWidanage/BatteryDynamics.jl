@@ -3,7 +3,11 @@
 *.jl.mem
 venv/
 
+.CondaPkg/
+.DS_Store
 
 docs/build/
 docs/Manifest.toml
 docs/Manifest.toml.lock
+
+examples/Manifest.toml

@@ -1,43 +1,33 @@
-"""
-Quick test script for PyBaMM interface
-Run this to verify PyBaMM is working correctly
-"""
+@testset "PyBaMM interface" begin
+    @test_throws ArgumentError get_scalar_parameters(nothing)
+    @test_throws ArgumentError get_function_parameters(nothing)
 
-function test_pybamm_interface()
-println("Testing PyBaMM Interface...")
-println("=" ^ 40)
+    if BatteryDynamics.pybamm() === nothing
+        @warn "PyBaMM is unavailable; asserting graceful degradation only."
 
-    # Test 1: Load default parameter set
-    println("Test 1: Loading default parameter set...")
-    params = get_pybamm_parameter_set()
-    
-    if params === nothing
-        println("⚠ PyBaMM not available - skipping PyBaMM tests")
-        return true  # Return true to not fail the CI if PyBaMM is not available
-    end
-    
-    println("✓ Default parameter set loaded successfully")
-    
-    # Test 2: Get available parameter sets
-    println("\nTest 2: Getting available parameter sets...")
-    available_sets = get_available_parameter_sets()
-    println("✓ Found $(length(available_sets)) parameter sets")
-    if length(available_sets) > 0
-        println("Available sets: $(available_sets[1:min(3, length(available_sets))])...")
-    end
-    
-    # Test 3: Get a parameter value
-    println("\nTest 3: Getting parameter value...")
-    value = get_scalar_parameters(params)
-    if haskey(value, "Electrode height [m]")
-        println("✓ Electrode height: $(value["Electrode height [m]"]) m ")
+        @test get_available_parameter_sets() == String[]
+        @test get_pybamm_parameter_set("Chen2020") === nothing
     else
-        println("✓ Scalar parameters retrieved (showing first few):")
-        for (key, val) in collect(value)[1:min(3, length(value))]
-            println("  $key: $val")
-        end
-    end
+        available_sets = get_available_parameter_sets()
+        @test !isempty(available_sets)
+        @test "Chen2020" in available_sets
 
-    return true
-    
+        params = get_pybamm_parameter_set("Chen2020")
+        @test params !== nothing
+
+        scalars = get_scalar_parameters(params)
+        @test scalars isa Dict{String, Float64}
+        @test haskey(scalars, "Electrode height [m]")
+        @test scalars["Electrode height [m]"] > 0
+
+        functions = get_function_parameters(params)
+        @test functions isa Dict{String, Function}
+        @test haskey(functions, "Negative electrode OCP [V]")
+
+        ocp = functions["Negative electrode OCP [V]"](0.5)
+        @test isfinite(ocp)
+        @test 0.0 < ocp < 2.0
+
+        @test get_pybamm_parameter_set("NotARealParameterSet") === nothing
+    end
 end
