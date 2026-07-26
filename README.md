@@ -84,14 +84,23 @@ ocv_dict = dataframe_to_dict(ocv_data)
 See the `examples/` directory for detailed usage examples:
 - `parameter_conversion_example.jl`: Demonstrates PyBaMM parameter set conversion
 
+The examples have their own environment (which adds plotting and finite-difference
+packages that the library itself does not need), so run them with:
+
+```bash
+julia --project=examples examples/parameter_conversion_example.jl
+```
+
 ## Dependencies
 
 - **CondaPkg**: Python environment management
 - **DataFrames**: Data manipulation
 - **JSON**: JSON file parsing
-- **ModelingToolkit**: Symbolic modeling
-- **Plots**: Plotting capabilities
 - **PythonCall**: Python-Julia interface
+
+PyBaMM is imported lazily on first use, so `using BatteryDynamics` does not start
+Python. If PyBaMM is unavailable, the PyBaMM-backed functions warn and return
+`nothing` (or an empty list) rather than failing to load.
 
 ## Requirements
 
