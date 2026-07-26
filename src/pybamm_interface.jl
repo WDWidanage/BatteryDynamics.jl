@@ -3,16 +3,32 @@ PyBaMM interface for BatteryDynamics package
 Provides Julia functions to work with PyBaMM parameter sets via PythonCall
 """
 
-# Import Python modules
-const pb = Ref{Py}()
+# PyBaMM is imported on first use rather than in `__init__` so that loading
+# BatteryDynamics does not pay the cost of starting Python, and so that a
+# missing or broken PyBaMM installation degrades to a warning instead of
+# preventing the package from loading at all.
+const PYBAMM = Ref{Union{Py,Nothing}}(nothing)
+const PYBAMM_IMPORT_ATTEMPTED = Ref(false)
 
-function __init__()
-  try
-    pb[] = pyimport("pybamm")
-  catch e
-    @warn "Failed to import PyBaMM: $e. Some functionality may not be available."
-    pb[] = nothing
-  end
+"""
+    pybamm() -> Union{Py, Nothing}
+
+Return the `pybamm` Python module, importing it on first use.
+
+Returns `nothing` (and warns once) if PyBaMM cannot be imported, so that callers
+can degrade gracefully rather than error.
+"""
+function pybamm()
+    if !PYBAMM_IMPORT_ATTEMPTED[]
+        PYBAMM_IMPORT_ATTEMPTED[] = true
+        try
+            PYBAMM[] = pyimport("pybamm")
+        catch e
+            @warn "Failed to import PyBaMM. PyBaMM-dependent functionality is unavailable." exception = e
+            PYBAMM[] = nothing
+        end
+    end
+    return PYBAMM[]
 end
 
 """
@@ -21,40 +37,50 @@ end
 Get list of available parameter sets in PyBaMM.
 
 # Returns
-- `Vector{String}`: List of available parameter set names
+- `Vector{String}`: List of available parameter set names, or an empty vector if
+  PyBaMM is unavailable
 """
 function get_available_parameter_sets()
-    if pb[] === nothing
+    pb = pybamm()
+    if pb === nothing
         @warn "PyBaMM is not available. Returning empty list."
         return String[]
     end
     # Get the parameter sets list directly from PyBaMM
-    param_set_names = pyconvert(Vector{String}, pb[].parameter_sets)
+    param_set_names = pyconvert(Vector{String}, pb.parameter_sets)
     return param_set_names
 end
 
 """
-    get_pybamm_parameter_set(parameter_set_name::String ="Chen2020")
+    get_pybamm_parameter_set(parameter_set_name::String = "Chen2020")
 
-Load a specific parameter set by name.
+Load a specific parameter set by name and convert it to Julia types.
 
 # Arguments
 - `parameter_set_name::String`: Name of the parameter set to load
 
 # Returns
-- `NamedTuple`: The requested parameter set, or `nothing` if not found
+- `NamedTuple`: Contains `scalars` (`Dict{String, Float64}`) and `functions`
+  (`Dict{String, Function}`), or `nothing` if PyBaMM is unavailable or the
+  parameter set could not be loaded
+
+# Example
+```julia
+params = get_pybamm_parameter_set("Chen2020")
+```
 """
 function get_pybamm_parameter_set(parameter_set_name::String="Chen2020")
-    if pb[] === nothing
+    pb = pybamm()
+    if pb === nothing
         @warn "PyBaMM is not available. Cannot load parameter set '$parameter_set_name'."
         return nothing
     end
     try
-        params = pb[].ParameterValues(parameter_set_name)
+        params = pb.ParameterValues(parameter_set_name)
         return convert_pybamm_parameter_set_to_julia(params)
     catch e
         @warn "Error loading parameter set '$parameter_set_name': $e"
-        println("Available parameter sets: ", pb[].parameter_sets)
+        println("Available parameter sets: ", pb.parameter_sets)
         return nothing
     end
 end
@@ -66,31 +92,31 @@ end
 Convert a PyBaMM parameter set to Julia types, separating scalars and functions.
 
 # Arguments
-- `params::PyObject`: PyBaMM ParameterValues object
+- `params`: PyBaMM `ParameterValues` object
 
 # Returns
-- `NamedTuple`: Contains `scalars` (Dict{String, Float64}) and `functions` (Dict{String, Function})
+- `NamedTuple`: Contains `scalars` (`Dict{String, Float64}`) and `functions`
+  (`Dict{String, Function}`)
 
 # Example
 ```julia
-params = get_parameter_set()
-julia_params = convert_pybamm_parameter_set_to_julia(params)
-# Access scalars: julia_params.scalars["Cell capacity [A.h]"]
+julia_params = get_pybamm_parameter_set("Chen2020")
+# Access scalars: julia_params.scalars["Electrode height [m]"]
 # Access functions: julia_params.functions["Negative electrode OCP [V]"]
 ```
 """
 function convert_pybamm_parameter_set_to_julia(params)
     scalars = Dict{String, Float64}()
     functions = Dict{String, Function}()
-    
+
     try
         # Get all parameter names from the parameter set using Python's keys() method
         param_names = pyconvert(Vector{String}, collect(params.keys()))
-        
+
         for param_name in param_names
             try
                 param_value = params[param_name]
-                
+
                 # Check if it's a callable (function)
                 if pycallable(param_value)
                     # Convert Python function to Julia function
@@ -129,9 +155,9 @@ function convert_pybamm_parameter_set_to_julia(params)
                 @warn "Error processing parameter '$param_name': $e"
             end
         end
-        
+
         return (scalars = scalars, functions = functions)
-        
+
     catch e
         @error "Error converting parameter set to Julia: $e"
         return (scalars = Dict{String, Float64}(), functions = Dict{String, Function}())
@@ -141,31 +167,37 @@ end
 """
     get_scalar_parameters(params)
 
-Get only the scalar parameters from a PyBaMM parameter set as Julia floats.
+Get only the scalar parameters from a converted parameter set.
 
 # Arguments
-- `params::NamedTuple`: PyBaMM ParameterValues object
+- `params::NamedTuple`: Converted parameter set as returned by
+  [`get_pybamm_parameter_set`](@ref) or [`convert_pybamm_parameter_set_to_julia`](@ref)
 
 # Returns
 - `Dict{String, Float64}`: Dictionary of parameter names to scalar values
 """
-function get_scalar_parameters(params)
-    return params.scalars
-end
+get_scalar_parameters(params::NamedTuple) = params.scalars
 
 """
-    get_function_parameters(julia_params)
+    get_function_parameters(params)
 
-Get only the function parameters from a PyBaMM parameter set as Julia functions.
+Get only the function parameters from a converted parameter set, as Julia functions.
 
 # Arguments
-    - `params::NamedTuple`: PyBaMM ParameterValues object
+- `params::NamedTuple`: Converted parameter set as returned by
+  [`get_pybamm_parameter_set`](@ref) or [`convert_pybamm_parameter_set_to_julia`](@ref)
 
 # Returns
 - `Dict{String, Function}`: Dictionary of parameter names to Julia functions
 """
-function get_function_parameters(params)
-    return params.functions
-end
+get_function_parameters(params::NamedTuple) = params.functions
 
+# `get_pybamm_parameter_set` returns `nothing` when PyBaMM is unavailable or the
+# parameter set name is unknown; give a pointed error rather than a bare
+# "type Nothing has no field scalars".
+const NO_PARAMETER_SET_MESSAGE = "Received `nothing` instead of a parameter set. " *
+    "This usually means `get_pybamm_parameter_set` failed, either because PyBaMM " *
+    "is not installed or the parameter set name is unknown."
 
+get_scalar_parameters(::Nothing) = throw(ArgumentError(NO_PARAMETER_SET_MESSAGE))
+get_function_parameters(::Nothing) = throw(ArgumentError(NO_PARAMETER_SET_MESSAGE))
