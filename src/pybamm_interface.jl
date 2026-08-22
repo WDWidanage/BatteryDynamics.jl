@@ -86,6 +86,23 @@ function get_pybamm_parameter_set(parameter_set_name::String="Chen2020")
 end
 
 
+function _pybamm_value_to_float(value)
+    v = value
+    # Ai2020-style OCPs return a PyBaMM Interpolant; evaluate it to a numpy array.
+    if pyhasattr(v, "evaluate")
+        v = v.evaluate()
+    end
+    try
+        return pyconvert(Float64, v)
+    catch
+        # `evaluate()` yields a (1, 1) ndarray; `.item()` unwraps it to a Python scalar.
+        if pyhasattr(v, "item")
+            return pyconvert(Float64, v.item())
+        end
+        rethrow()
+    end
+end
+
 """
     convert_pybamm_parameter_set_to_julia(params)
 
@@ -123,7 +140,7 @@ function convert_pybamm_parameter_set_to_julia(params)
                     # Convert Python function to Julia function
                     julia_func = function(x)
                         try
-                            return pyconvert(Float64, param_value(x))
+                            return _pybamm_value_to_float(param_value(x))
                         catch e
                             @warn "Error evaluating function '$param_name' at x=$x: $e"
                             return NaN

@@ -5,7 +5,7 @@ Example demonstrating how to convert PyBaMM parameter sets to Julia types
 using BatteryDynamics
 
 # Load a parameter set
-params = get_pybamm_parameter_set("Chen2020");
+params = get_pybamm_parameter_set("Ramadass2004");
 
 
 println("=== PyBaMM Parameter Set Conversion Example ===")
