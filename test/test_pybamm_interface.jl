@@ -28,6 +28,14 @@
         @test isfinite(ocp)
         @test 0.0 < ocp < 2.0
 
+        # Ai2020 stores OCPs as PyBaMM Interpolants, not numpy scalars.
+        if "Ai2020" in available_sets
+            ai_params = get_pybamm_parameter_set("Ai2020")
+            ai_ocp = get_function_parameters(ai_params)["Negative electrode OCP [V]"](0.05)
+            @test isfinite(ai_ocp)
+            @test 0.0 < ai_ocp < 2.0
+        end
+
         @test get_pybamm_parameter_set("NotARealParameterSet") === nothing
     end
 end
