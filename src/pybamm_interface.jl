@@ -110,8 +110,9 @@ function convert_pybamm_parameter_set_to_julia(params)
     functions = Dict{String, Function}()
 
     try
-        # Get all parameter names from the parameter set using Python's keys() method
-        param_names = pyconvert(Vector{String}, collect(params.keys()))
+        # Convert the Python keys view directly. `collect` then `pyconvert(Vector{String}, ...)`
+        # goes through NumPy and raises `ValueError: NoneType copy mode not allowed` on NumPy 1.x.
+        param_names = pyconvert(Vector{String}, params.keys())
 
         for param_name in param_names
             try
