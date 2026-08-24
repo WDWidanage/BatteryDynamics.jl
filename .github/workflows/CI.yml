@@ -36,7 +36,7 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1.11'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - name: Install CondaPkg dependencies
         run: julia --project=. -e "using CondaPkg; CondaPkg.resolve()"
